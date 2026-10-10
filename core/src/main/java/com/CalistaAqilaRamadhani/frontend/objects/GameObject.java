@@ -1,26 +1,26 @@
+
 package com.CalistaAqilaRamadhani.frontend.objects;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.math.Rectangle;
 
 public abstract class GameObject implements Collidable {
 
-    protected float x;
-    protected float y;
-    protected float width;
-    protected float height;
-    protected float speed;
+    protected float x, y, width, height, speed;
     protected Color color;
-
-    // Object starts as active
     protected boolean active = true;
 
+    protected TextureRegion sprite;
+    protected Animation<TextureRegion> animation;
+    protected float stateTime = 0f;
 
-    // Constructor
-    public GameObject(float x, float y, float width, float height,
+    public GameObject(float x, float y,
+                      float width, float height,
                       float speed, Color color) {
-
         this.x = x;
         this.y = y;
         this.width = width;
@@ -29,106 +29,85 @@ public abstract class GameObject implements Collidable {
         this.color = color;
     }
 
-
-    // Every subclass must implement update()
-    public abstract void update(float delta);
-
+    public void update(float delta) {
+        stateTime += delta;
+    }
 
     @Override
     public Rectangle getCoreHitbox() {
         return new Rectangle(x, y, width, height);
     }
 
-
     @Override
     public Rectangle getGrazeHitbox() {
         return new Rectangle(
-            x - 10,
-            y - 10,
-            width + 20,
-            height + 20
+            x - 10, y - 10, width + 20, height + 20
         );
     }
 
-
     @Override
     public void onCollision(Collidable other) {
-        // Base collision handler
     }
-
 
     public boolean isDestroyed() {
         return !active;
     }
 
-
     public void destroy() {
         active = false;
     }
 
-
-
-    public boolean isOffScreen(float screenWidth, float screenHeight) {
-
-        return x < -50
-            || x > screenWidth + 50
-            || y < -50
-            || y > screenHeight + 50;
+    public boolean isOffScreen(float screenWidth,
+                               float screenHeight) {
+        return x < -50 || x > screenWidth + 50
+            || y < -50 || y > screenHeight + 50;
     }
 
-
-    public void render(ShapeRenderer shapeRenderer) {
-
-        if (shapeRenderer != null && color != null && active) {
-
-            shapeRenderer.setColor(color);
-            shapeRenderer.rect(x, y, width, height);
+    public void render(ShapeRenderer renderer) {
+        if (renderer != null && color != null && active) {
+            renderer.setColor(color);
+            renderer.rect(x, y, width, height);
         }
     }
 
-
-
-    public float getX() {
-        return x;
+    public void render(SpriteBatch batch) {
+        if (batch != null && active) {
+            if (animation != null) {
+                TextureRegion frame =
+                    animation.getKeyFrame(stateTime, true);
+                batch.draw(frame, x, y, width, height);
+            } else if (sprite != null) {
+                batch.draw(sprite, x, y, width, height);
+            }
+        }
     }
 
-
-    public float getY() {
-        return y;
+    public TextureRegion getSprite() {
+        return sprite;
     }
 
-
-    public float getWidth() {
-        return width;
+    public void setSprite(TextureRegion sprite) {
+        this.sprite = sprite;
     }
 
-
-    public float getHeight() {
-        return height;
+    public Animation<TextureRegion> getAnimation() {
+        return animation;
     }
 
-
-    public float getSpeed() {
-        return speed;
+    public void setAnimation(
+        Animation<TextureRegion> animation) {
+        this.animation = animation;
+        this.stateTime = 0f;
     }
 
+    public float getX() { return x; }
+    public float getY() { return y; }
+    public float getWidth() { return width; }
+    public float getHeight() { return height; }
+    public float getSpeed() { return speed; }
+    public Color getColor() { return color; }
 
-    public Color getColor() {
-        return color;
-    }
-
-
-    public void setX(float x) {
-        this.x = x;
-    }
-
-
-    public void setY(float y) {
-        this.y = y;
-    }
-
-
-    public void setSpeed(float speed) {
-        this.speed = speed;
-    }
+    public void setX(float x) { this.x = x; }
+    public void setY(float y) { this.y = y; }
+    public void setSpeed(float speed) { this.speed = speed; }
 }

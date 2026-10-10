@@ -1,11 +1,14 @@
+
 package com.CalistaAqilaRamadhani.frontend.objects.enemies;
 
 import com.badlogic.gdx.graphics.Color;
+import com.CalistaAqilaRamadhani.frontend.objects.Collidable;
+import com.CalistaAqilaRamadhani.frontend.objects.Player;
 
 public class Fairy extends Enemy {
 
+    // Constructor 1: Default position
     public Fairy(String name, int hp) {
-
         super(
             150,
             380,
@@ -18,8 +21,8 @@ public class Fairy extends Enemy {
         );
     }
 
+    // Constructor 2: Custom position
     public Fairy(float x, float y, String name, int hp) {
-
         super(
             x,
             y,
@@ -31,14 +34,19 @@ public class Fairy extends Enemy {
             500L
         );
     }
-}
 
-@Override
-public void onCollision(Collidable other) {
+    // Update animation and inherited enemy behavior
+    @Override
+    public void update(float delta) {
+        super.update(delta);
+    }
 
-    if (other instanceof Player) {
+    // Handle collision with Player
+    @Override
+    public void onCollision(Collidable other) {
 
-        System.out.println("Player touches fairy");
+        if (other instanceof Player) {
+            System.out.println("Player touches fairy");
+        }
     }
 }
-

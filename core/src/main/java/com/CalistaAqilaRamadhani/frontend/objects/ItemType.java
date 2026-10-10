@@ -1,5 +1,7 @@
 package com.CalistaAqilaRamadhani.frontend.objects.items;
 
+import com.CalistaAqilaRamadhani.frontend.objects.items.ItemType;
+
 public enum ItemType {
 
     POWER(100L, 1),

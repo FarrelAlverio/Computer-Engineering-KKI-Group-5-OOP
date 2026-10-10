@@ -1,8 +1,11 @@
+
 package com.CalistaAqilaRamadhani.frontend.objects.items;
 
 import com.CalistaAqilaRamadhani.frontend.objects.Collidable;
 import com.CalistaAqilaRamadhani.frontend.objects.GameObject;
 import com.CalistaAqilaRamadhani.frontend.objects.Player;
+
+
 import com.badlogic.gdx.graphics.Color;
 
 public class Item extends GameObject {
@@ -11,17 +14,14 @@ public class Item extends GameObject {
     private ItemType itemTypeEnum;
     private long scoreValue;
 
-
     // Constructor 1
     public Item(float x, float y, ItemType itemTypeEnum) {
-
         super(x, y, 16, 16, 100f, Color.WHITE);
 
         this.itemTypeEnum = itemTypeEnum;
         this.itemType = itemTypeEnum.name();
         this.scoreValue = itemTypeEnum.getScoreValue();
     }
-
 
     // Constructor 2
     public Item(
@@ -31,8 +31,7 @@ public class Item extends GameObject {
         float height,
         float speed,
         ItemType itemTypeEnum,
-        long scoreValue
-    ) {
+        long scoreValue) {
 
         super(x, y, width, height, speed, Color.WHITE);
 
@@ -41,13 +40,16 @@ public class Item extends GameObject {
         this.scoreValue = scoreValue;
     }
 
-
-    // Item moves downward
+    // Update item movement and animation
     @Override
     public void update(float delta) {
+
+        // Update animation time
+        super.update(delta);
+
+        // Item moves downward
         y -= speed * delta;
     }
-
 
     // Getters
     public String getItemType() {
@@ -61,7 +63,6 @@ public class Item extends GameObject {
     public long getScoreValue() {
         return scoreValue;
     }
-
 
     // Collision
     @Override

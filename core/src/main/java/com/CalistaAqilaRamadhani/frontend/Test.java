@@ -15,8 +15,17 @@ public class Test {
         Enemy fairyBoss = new Enemy("Cirno (Stage 2 Boss)", 50);
 
         System.out.println("\n--- Initial Battle State ---");
-        System.out.println("Player: " + reimu.name + " | HP: " + reimu.hp + " | Power: " + reimu.power + " | SpellCards: " + reimu.spellCards);
-        System.out.println("Enemy:  " + fairyBoss.name + " | HP: " + fairyBoss.hp);
+        System.out.println(
+            "Player: " + reimu.getName()
+                + " | HP: " + reimu.getHp()
+                + " | Power: " + reimu.getPower()
+                + " | SpellCards: " + reimu.getSpellCards()
+        );
+        System.out.println(
+            "Enemy: " + fairyBoss.getName()
+                + " | HP: " + fairyBoss.getHp()
+        );
+
 
         System.out.println("\n--- Turn 1: Player Shoots Enemy ---");
         reimu.shoot(fairyBoss);

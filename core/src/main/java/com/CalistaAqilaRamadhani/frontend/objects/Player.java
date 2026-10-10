@@ -1,11 +1,11 @@
+
 package com.CalistaAqilaRamadhani.frontend.objects;
 
 import com.CalistaAqilaRamadhani.frontend.objects.bullets.Bullet;
+import com.CalistaAqilaRamadhani.frontend.objects.BulletType;
 import com.CalistaAqilaRamadhani.frontend.objects.enemies.Enemy;
-import com.CalistaAqilaRamadhani.frontend.objects.items.;
-package com.CalistaAqilaRamadhani.frontend.objects.ItemType;
-package com.CalistaAqilaRamadhani.frontend.objects.items;
-
+import com.CalistaAqilaRamadhani.frontend.objects.items.Item;
+import com.CalistaAqilaRamadhani.frontend.objects.items.ItemType;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -19,9 +19,9 @@ public class Player extends GameObject {
     private int spellCards;
     private long score;
 
+    // Constructor with default position
     public Player(String name, int hp, int power, int spellCards) {
-
-        super(280, 40, 32, 32, 0, Color.RED);
+        super(280, 40, 32, 48, 0, Color.RED);
 
         this.name = name;
         this.hp = hp;
@@ -30,11 +30,12 @@ public class Player extends GameObject {
         this.score = 0;
     }
 
+    // Constructor with custom position
     public Player(float x, float y,
                   String name, int hp,
                   int power, int spellCards) {
 
-        super(x, y, 32, 32, 0, Color.RED);
+        super(x, y, 32, 48, 0, Color.RED);
 
         this.name = name;
         this.hp = hp;
@@ -43,6 +44,7 @@ public class Player extends GameObject {
         this.score = 0;
     }
 
+    // Getters and setters
     public String getName() {
         return name;
     }
@@ -50,7 +52,6 @@ public class Player extends GameObject {
     public void setName(String name) {
         this.name = name;
     }
-
 
     public int getHp() {
         return hp;
@@ -60,7 +61,6 @@ public class Player extends GameObject {
         this.hp = Math.max(0, hp);
     }
 
-
     public int getPower() {
         return power;
     }
@@ -68,7 +68,6 @@ public class Player extends GameObject {
     public void setPower(int power) {
         this.power = power;
     }
-
 
     public int getSpellCards() {
         return spellCards;
@@ -78,13 +77,12 @@ public class Player extends GameObject {
         this.spellCards = spellCards;
     }
 
-
     public long getScore() {
         return score;
     }
 
+    // Player takes damage
     public void takeDamage(int damage) {
-
         setHp(getHp() - damage);
 
         System.out.println(
@@ -99,32 +97,28 @@ public class Player extends GameObject {
         }
     }
 
-
+    // Add score
     public void addScore(long points) {
-
         if (points > 0) {
             score += points;
         }
     }
 
+    // Shoot enemy directly
     public void shoot(Enemy target) {
-
         int damage = 10 + getPower();
 
         System.out.println(
-            getName()
-                + " shoots "
+            getName() + " shoots "
                 + target.getName()
-                + " dealing "
-                + damage
-                + " DMG!"
+                + " dealing " + damage + " DMG!"
         );
 
         target.takeDamage(damage);
     }
 
+    // Create player bullet
     public Bullet shootBullet() {
-
         int damage = 10 + power;
 
         System.out.println(
@@ -144,36 +138,37 @@ public class Player extends GameObject {
         return getHp() > 0;
     }
 
+    // PART III: Update player movement and animation
     @Override
     public void update(float delta) {
 
+        // Update animation time from GameObject
+        super.update(delta);
+
         if (Gdx.input != null) {
 
-            // MOVE UP
+            // Move UP
             if (Gdx.input.isKeyPressed(Input.Keys.W)
                 || Gdx.input.isKeyPressed(Input.Keys.UP)) {
 
                 y += speed * delta;
             }
 
-
-            // MOVE DOWN
+            // Move DOWN
             if (Gdx.input.isKeyPressed(Input.Keys.S)
                 || Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
 
                 y -= speed * delta;
             }
 
-
-            // MOVE LEFT
+            // Move LEFT
             if (Gdx.input.isKeyPressed(Input.Keys.A)
                 || Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
 
                 x -= speed * delta;
             }
 
-
-            // MOVE RIGHT
+            // Move RIGHT
             if (Gdx.input.isKeyPressed(Input.Keys.D)
                 || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
 
@@ -182,18 +177,17 @@ public class Player extends GameObject {
         }
     }
 
-
+    // Handle collisions
     @Override
     public void onCollision(Collidable other) {
 
         if (other instanceof Item) {
-
             System.out.println("Player touches items");
-
             collectItem((Item) other);
         }
     }
 
+    // Collect item
     public void collectItem(Item item) {
 
         ItemType type = item.getItemTypeEnum();
@@ -203,85 +197,53 @@ public class Player extends GameObject {
             switch (type) {
 
                 case POWER -> {
-
                     this.power += type.getPowerBonus();
-
-                    addScore(
-                        item.getScoreValue()
-                    );
+                    addScore(item.getScoreValue());
 
                     System.out.println(
-                        name
-                            + " collected POWER item! "
-                            + "Power increased to "
-                            + power
+                        name + " collected POWER item! "
+                            + "Power increased to " + power
                     );
                 }
-
 
                 case POINT -> {
-
-                    addScore(
-                        item.getScoreValue()
-                    );
+                    addScore(item.getScoreValue());
 
                     System.out.println(
-                        name
-                            + " collected POINT item!"
+                        name + " collected POINT item!"
                     );
                 }
-
 
                 case BOMB -> {
-
                     this.spellCards += 1;
-
-                    addScore(
-                        item.getScoreValue()
-                    );
+                    addScore(item.getScoreValue());
 
                     System.out.println(
-                        name
-                            + " collected BOMB item! "
-                            + "SpellCards: "
-                            + spellCards
+                        name + " collected BOMB item! "
+                            + "SpellCards: " + spellCards
                     );
                 }
 
-
                 case LIFE -> {
-
                     this.hp += 20;
-
-                    addScore(
-                        item.getScoreValue()
-                    );
+                    addScore(item.getScoreValue());
 
                     System.out.println(
-                        name
-                            + " collected LIFE item! "
-                            + "HP: "
-                            + hp
+                        name + " collected LIFE item! "
+                            + "HP: " + hp
                     );
                 }
             }
 
         } else {
-
-            addScore(
-                item.getScoreValue()
-            );
+            addScore(item.getScoreValue());
 
             System.out.println(
-                name
-                    + " collected "
-                    + item.getItemType()
-                    + "!"
+                name + " collected "
+                    + item.getItemType() + "!"
             );
         }
+
+        item.destroy();
     }
 }
-
-   item.destroy();
-}
-
