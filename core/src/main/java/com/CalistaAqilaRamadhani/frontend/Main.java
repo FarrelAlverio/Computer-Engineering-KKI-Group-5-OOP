@@ -15,12 +15,15 @@ import com.CalistaAqilaRamadhani.frontend.objects.enemies.Enemy;
 import com.CalistaAqilaRamadhani.frontend.objects.enemies.Fairy;
 import com.CalistaAqilaRamadhani.frontend.objects.items.Item;
 import com.CalistaAqilaRamadhani.frontend.objects.items.ItemType;
+
 import com.CalistaAqilaRamadhani.frontend.systems.AssetManager;
 import com.CalistaAqilaRamadhani.frontend.systems.EntityFactory;
+import com.CalistaAqilaRamadhani.frontend.systems.AudioSystem;
+import com.CalistaAqilaRamadhani.frontend.systems.BulletManager;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
 
 public class Main extends ApplicationAdapter {
 
@@ -30,8 +33,12 @@ public class Main extends ApplicationAdapter {
     private Boss boss;
     private Item powerItem;
     private Item pointItem;
+
     private ArrayList<GameObject> entities;
-    private ArrayList<Bullet> bullets;
+    private BulletManager bulletManager;
+
+    private float playerShootTimer = 0f;
+    private float bossShootTimer = 1.5f;
 
     @Override
     public void create() {
@@ -39,9 +46,13 @@ public class Main extends ApplicationAdapter {
 
         fairy = new ArrayList<>();
         entities = new ArrayList<>();
-        bullets = new ArrayList<>();
 
         AssetManager.getInstance().init();
+
+        AudioSystem.getInstance().init();
+        AudioSystem.getInstance().playBgm();
+
+        bulletManager = new BulletManager();
 
         player = EntityFactory.createPlayer(
             280, 40,
@@ -91,11 +102,30 @@ public class Main extends ApplicationAdapter {
     public void render() {
         float delta = Gdx.graphics.getDeltaTime();
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.Z)
-            && !player.isDestroyed()) {
+        playerShootTimer -= delta;
+        bossShootTimer -= delta;
 
-            Bullet bullet = player.shootBullet();
-            bullets.add(bullet);
+        if (!player.isDestroyed() && player.isAlive()) {
+
+            boolean shooting =
+                Gdx.input.isKeyPressed(Input.Keys.SPACE)
+                    || Gdx.input.isKeyPressed(Input.Keys.Z);
+
+            if (shooting && playerShootTimer <= 0f) {
+
+                player.shootBullet(bulletManager);
+
+                AudioSystem.getInstance().playShoot();
+
+                playerShootTimer = 0.15f;
+            }
+        }
+
+        if (!boss.isDestroyed() && bossShootTimer <= 0f) {
+
+            boss.shootBullet(bulletManager);
+
+            bossShootTimer = 1.5f;
         }
 
         for (GameObject entity : entities) {
@@ -104,18 +134,20 @@ public class Main extends ApplicationAdapter {
             }
         }
 
-        for (Bullet bullet : bullets) {
-            if (!bullet.isDestroyed()) {
-                bullet.update(delta);
-            }
-        }
+        bulletManager.updateAndRecycle(
+            delta,
+            Gdx.graphics.getWidth(),
+            Gdx.graphics.getHeight()
+        );
 
-        for (Bullet bullet : bullets) {
+        for (Bullet bullet : bulletManager.getActivePlayerBullets()) {
+
             if (bullet.isDestroyed()) {
                 continue;
             }
 
             for (GameObject entity : entities) {
+
                 if (entity instanceof Enemy enemy
                     && !enemy.isDestroyed()) {
 
@@ -123,6 +155,11 @@ public class Main extends ApplicationAdapter {
                         .overlaps(enemy.getCoreHitbox())) {
 
                         bullet.onCollision(enemy);
+
+                        if (enemy.isDestroyed()) {
+                            AudioSystem.getInstance()
+                                .playEnemyDeath();
+                        }
 
                         if (bullet.isDestroyed()) {
                             break;
@@ -132,8 +169,40 @@ public class Main extends ApplicationAdapter {
             }
         }
 
+        if (player.isAlive() && !player.isDestroyed()) {
+
+            for (Bullet bullet : bulletManager.getActiveEnemyBullets()) {
+
+                if (bullet.isDestroyed()) {
+                    continue;
+                }
+
+                if (bullet.getCoreHitbox()
+                    .overlaps(player.getCoreHitbox())) {
+
+                    player.takeDamage(10);
+                    bullet.destroy();
+
+                } else if (
+                    bullet.getCoreHitbox()
+                        .overlaps(player.getGrazeHitbox())
+                        && !bullet.hasBeenGrazed()) {
+
+                    player.addScore(50);
+                    bullet.setGrazed(true);
+
+                    System.out.println(
+                        "GRAZE! +50 Points. Score: "
+                            + player.getScore()
+                    );
+                }
+            }
+        }
+
         if (!player.isDestroyed()) {
+
             for (GameObject entity : entities) {
+
                 if (entity instanceof Item item
                     && !item.isDestroyed()) {
 
@@ -141,18 +210,15 @@ public class Main extends ApplicationAdapter {
                         .overlaps(item.getCoreHitbox())) {
 
                         player.onCollision(item);
+
+                        if (item.isDestroyed()) {
+                            AudioSystem.getInstance()
+                                .playItemCollect();
+                        }
                     }
                 }
             }
         }
-
-        bullets.removeIf(bullet ->
-            bullet.isDestroyed()
-                || bullet.isOffScreen(
-                Gdx.graphics.getWidth(),
-                Gdx.graphics.getHeight()
-            )
-        );
 
         ScreenUtils.clear(0.1f, 0.1f, 0.15f, 1f);
 
@@ -164,11 +230,7 @@ public class Main extends ApplicationAdapter {
             }
         }
 
-        for (Bullet bullet : bullets) {
-            if (!bullet.isDestroyed()) {
-                bullet.render(batch);
-            }
-        }
+        bulletManager.render(batch);
 
         batch.end();
     }
@@ -182,6 +244,7 @@ public class Main extends ApplicationAdapter {
         Iterator<T> iterator = list.iterator();
 
         while (iterator.hasNext()) {
+
             T entity = iterator.next();
 
             entity.update(delta);
@@ -201,10 +264,16 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void dispose() {
+
         if (batch != null) {
             batch.dispose();
         }
 
+        if (bulletManager != null) {
+            bulletManager.dispose();
+        }
+
+        AudioSystem.getInstance().dispose();
         AssetManager.getInstance().dispose();
     }
 }

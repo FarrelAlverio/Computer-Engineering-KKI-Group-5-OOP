@@ -27,6 +27,7 @@ public abstract class GameObject implements Collidable {
         this.height = height;
         this.speed = speed;
         this.color = color;
+        this.active = true;
     }
 
     public void update(float delta) {
@@ -41,7 +42,10 @@ public abstract class GameObject implements Collidable {
     @Override
     public Rectangle getGrazeHitbox() {
         return new Rectangle(
-            x - 10, y - 10, width + 20, height + 20
+            x - 10,
+            y - 10,
+            width + 20,
+            height + 20
         );
     }
 
@@ -75,7 +79,9 @@ public abstract class GameObject implements Collidable {
             if (animation != null) {
                 TextureRegion frame =
                     animation.getKeyFrame(stateTime, true);
+
                 batch.draw(frame, x, y, width, height);
+
             } else if (sprite != null) {
                 batch.draw(sprite, x, y, width, height);
             }
@@ -100,14 +106,39 @@ public abstract class GameObject implements Collidable {
         this.stateTime = 0f;
     }
 
-    public float getX() { return x; }
-    public float getY() { return y; }
-    public float getWidth() { return width; }
-    public float getHeight() { return height; }
-    public float getSpeed() { return speed; }
-    public Color getColor() { return color; }
+    public float getX() {
+        return x;
+    }
 
-    public void setX(float x) { this.x = x; }
-    public void setY(float y) { this.y = y; }
-    public void setSpeed(float speed) { this.speed = speed; }
+    public float getY() {
+        return y;
+    }
+
+    public float getWidth() {
+        return width;
+    }
+
+    public float getHeight() {
+        return height;
+    }
+
+    public float getSpeed() {
+        return speed;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setX(float x) {
+        this.x = x;
+    }
+
+    public void setY(float y) {
+        this.y = y;
+    }
+
+    public void setSpeed(float speed) {
+        this.speed = speed;
+    }
 }

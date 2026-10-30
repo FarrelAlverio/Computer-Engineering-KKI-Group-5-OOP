@@ -14,10 +14,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class EntityFactory {
 
-    // ==========================================
-    // PRE-CS: CREATE PLAYER
-    // ==========================================
-
     public static Player createPlayer(
         float x, float y, String name,
         int hp, int power, int spellCards) {
@@ -35,10 +31,6 @@ public class EntityFactory {
         return player;
     }
 
-    // ==========================================
-    // CS PART I: CREATE BOSS
-    // ==========================================
-
     public static Boss createBoss(
         float x, float y, String name, int hp) {
 
@@ -53,10 +45,6 @@ public class EntityFactory {
         return boss;
     }
 
-    // ==========================================
-    // CS PART I: CREATE RED FAIRY
-    // ==========================================
-
     public static Fairy createFairy(
         float x, float y, String name, int hp) {
 
@@ -70,10 +58,6 @@ public class EntityFactory {
 
         return fairy;
     }
-
-    // ==========================================
-    // CS PART I: CREATE FAIRY WITH CUSTOM KEY
-    // ==========================================
 
     public static Fairy createFairy(
         float x, float y, String name,
@@ -90,10 +74,6 @@ public class EntityFactory {
         return fairy;
     }
 
-    // ==========================================
-    // PRE-CS: CREATE ITEM
-    // ==========================================
-
     public static Item createItem(
         float x, float y, ItemType itemType) {
 
@@ -102,8 +82,8 @@ public class EntityFactory {
         String key = switch (itemType) {
             case POWER -> "item_power";
             case POINT -> "item_point";
-            case BOMB  -> "item_bomb";
-            case LIFE  -> "item_life";
+            case BOMB -> "item_bomb";
+            case LIFE -> "item_life";
         };
 
         TextureRegion sprite =
@@ -114,10 +94,6 @@ public class EntityFactory {
 
         return item;
     }
-
-    // ==========================================
-    // CS PART III: CREATE PLAYER BULLET
-    // ==========================================
 
     public static Bullet createPlayerBullet(
         float x, float y, int damage,
@@ -136,10 +112,6 @@ public class EntityFactory {
         return bullet;
     }
 
-    // ==========================================
-    // CS PART III: PLAYER BULLET DEFAULT SPRITE
-    // ==========================================
-
     public static Bullet createPlayerBullet(
         float x, float y, int damage) {
 
@@ -147,10 +119,6 @@ public class EntityFactory {
             x, y, damage, "bullet_amulet"
         );
     }
-
-    // ==========================================
-    // PRE-CS: CREATE ENEMY BULLET
-    // ==========================================
 
     public static Bullet createEnemyBullet(
         float x, float y, int damage) {
@@ -166,5 +134,17 @@ public class EntityFactory {
         bullet.setSprite(sprite);
 
         return bullet;
+    }
+
+    public static Bullet createPooledBullet(
+        float x, float y,
+        BulletType bulletType,
+        int damage) {
+
+        if (bulletType == BulletType.DANMAKU) {
+            return createEnemyBullet(x, y, damage);
+        }
+
+        return createPlayerBullet(x, y, damage);
     }
 }

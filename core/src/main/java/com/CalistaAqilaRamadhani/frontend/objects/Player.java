@@ -1,15 +1,16 @@
 
 package com.CalistaAqilaRamadhani.frontend.objects;
 
-import com.CalistaAqilaRamadhani.frontend.objects.bullets.Bullet;
-import com.CalistaAqilaRamadhani.frontend.objects.BulletType;
 import com.CalistaAqilaRamadhani.frontend.objects.enemies.Enemy;
 import com.CalistaAqilaRamadhani.frontend.objects.items.Item;
 import com.CalistaAqilaRamadhani.frontend.objects.items.ItemType;
+import com.CalistaAqilaRamadhani.frontend.objects.patterns.ShootingPattern;
+import com.CalistaAqilaRamadhani.frontend.systems.BulletManager;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.Rectangle;
 
 public class Player extends GameObject {
 
@@ -18,8 +19,10 @@ public class Player extends GameObject {
     private int power;
     private int spellCards;
     private long score;
+    private int currentDir = 0;
 
-    // Constructor with default position
+    private ShootingPattern shootingPattern;
+
     public Player(String name, int hp, int power, int spellCards) {
         super(280, 40, 32, 48, 0, Color.RED);
 
@@ -30,7 +33,6 @@ public class Player extends GameObject {
         this.score = 0;
     }
 
-    // Constructor with custom position
     public Player(float x, float y,
                   String name, int hp,
                   int power, int spellCards) {
@@ -44,7 +46,6 @@ public class Player extends GameObject {
         this.score = 0;
     }
 
-    // Getters and setters
     public String getName() {
         return name;
     }
@@ -81,7 +82,14 @@ public class Player extends GameObject {
         return score;
     }
 
-    // Player takes damage
+    public ShootingPattern getShootingPattern() {
+        return shootingPattern;
+    }
+
+    public void setShootingPattern(ShootingPattern shootingPattern) {
+        this.shootingPattern = shootingPattern;
+    }
+
     public void takeDamage(int damage) {
         setHp(getHp() - damage);
 
@@ -97,14 +105,12 @@ public class Player extends GameObject {
         }
     }
 
-    // Add score
     public void addScore(long points) {
         if (points > 0) {
             score += points;
         }
     }
 
-    // Shoot enemy directly
     public void shoot(Enemy target) {
         int damage = 10 + getPower();
 
@@ -117,77 +123,87 @@ public class Player extends GameObject {
         target.takeDamage(damage);
     }
 
-    // Create player bullet
-    public Bullet shootBullet() {
-        int damage = 10 + power;
+    public void shootBullet(BulletManager bulletManager) {
+        if (bulletManager == null) {
+            return;
+        }
 
-        System.out.println(
-            name + " shoots bullet dealing "
-                + damage + " DMG!"
-        );
+        float originX = x + width / 2f - 8f;
+        float originY = y + height;
 
-        return new Bullet(
-            x + width / 2 - 4,
-            y + height,
-            BulletType.AMULET,
-            damage
-        );
+        if (shootingPattern != null) {
+            shootingPattern.execute(
+                originX,
+                originY,
+                bulletManager,
+                true
+            );
+        } else {
+            bulletManager.spawnPlayerBullet(
+                originX,
+                originY,
+                0f,
+                400f,
+                10 + power
+            );
+        }
     }
 
     public boolean isAlive() {
         return getHp() > 0;
     }
 
-    // PART III: Update player movement and animation
+    @Override
+    public Rectangle getCoreHitbox() {
+        return new Rectangle(
+            x + (width / 2f) - 4f,
+            y + (height / 2f) - 4f,
+            8f,
+            8f
+        );
+    }
+
+    @Override
+    public Rectangle getGrazeHitbox() {
+        return new Rectangle(x, y, width, height);
+    }
+
     @Override
     public void update(float delta) {
-
-        // Update animation time from GameObject
         super.update(delta);
 
         if (Gdx.input != null) {
 
-            // Move UP
             if (Gdx.input.isKeyPressed(Input.Keys.W)
                 || Gdx.input.isKeyPressed(Input.Keys.UP)) {
-
                 y += speed * delta;
             }
 
-            // Move DOWN
             if (Gdx.input.isKeyPressed(Input.Keys.S)
                 || Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-
                 y -= speed * delta;
             }
 
-            // Move LEFT
             if (Gdx.input.isKeyPressed(Input.Keys.A)
                 || Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-
                 x -= speed * delta;
             }
 
-            // Move RIGHT
             if (Gdx.input.isKeyPressed(Input.Keys.D)
                 || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-
                 x += speed * delta;
             }
         }
     }
 
-    // Handle collisions
     @Override
     public void onCollision(Collidable other) {
-
         if (other instanceof Item) {
             System.out.println("Player touches items");
             collectItem((Item) other);
         }
     }
 
-    // Collect item
     public void collectItem(Item item) {
 
         ItemType type = item.getItemTypeEnum();
