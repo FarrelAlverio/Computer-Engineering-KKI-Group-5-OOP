@@ -30,6 +30,7 @@ public abstract class GameObject implements Collidable {
         this.active = true;
     }
 
+
     public void update(float delta) {
         stateTime += delta;
     }
@@ -51,6 +52,10 @@ public abstract class GameObject implements Collidable {
 
     @Override
     public void onCollision(Collidable other) {
+    }
+
+    public boolean isActive() {
+        return active;
     }
 
     public boolean isDestroyed() {
@@ -126,6 +131,10 @@ public abstract class GameObject implements Collidable {
         return speed;
     }
 
+    public float getStateTime() {
+        return stateTime;
+    }
+
     public Color getColor() {
         return color;
     }
@@ -140,5 +149,13 @@ public abstract class GameObject implements Collidable {
 
     public void setSpeed(float speed) {
         this.speed = speed;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public void setStateTime(float stateTime) {
+        this.stateTime = stateTime;
     }
 }

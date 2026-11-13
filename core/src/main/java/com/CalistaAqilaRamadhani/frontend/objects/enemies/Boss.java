@@ -2,14 +2,10 @@
 package com.CalistaAqilaRamadhani.frontend.objects.enemies;
 
 import com.badlogic.gdx.graphics.Color;
-import com.CalistaAqilaRamadhani.frontend.objects.patterns.ShootingPattern;
 import com.CalistaAqilaRamadhani.frontend.objects.patterns.shootingStrategy.SpreadShot;
-import com.CalistaAqilaRamadhani.frontend.systems.BulletManager;
+import com.CalistaAqilaRamadhani.frontend.objects.patterns.entityStrategy.FixedMovement;
 
 public class Boss extends Enemy {
-
-    private ShootingPattern shootingPattern =
-        new SpreadShot(200f, 3, 30f);
 
     public Boss(String name, int hp) {
         super(
@@ -22,6 +18,9 @@ public class Boss extends Enemy {
             hp,
             5000L
         );
+
+        setShootingPattern(new SpreadShot(200f, 3, 30f));
+        setMovementPattern(new FixedMovement());
     }
 
     public Boss(float x, float y, String name, int hp) {
@@ -35,27 +34,8 @@ public class Boss extends Enemy {
             hp,
             5000L
         );
-    }
 
-    public void shootBullet(BulletManager bulletManager) {
-        if (bulletManager != null &&
-            shootingPattern != null &&
-            !isDestroyed()) {
-
-            shootingPattern.execute(
-                x + width / 2f - 8f,
-                y,
-                bulletManager,
-                false
-            );
-        }
-    }
-
-    public ShootingPattern getShootingPattern() {
-        return shootingPattern;
-    }
-
-    public void setShootingPattern(ShootingPattern shootingPattern) {
-        this.shootingPattern = shootingPattern;
+        setShootingPattern(new SpreadShot(200f, 3, 30f));
+        setMovementPattern(new FixedMovement());
     }
 }

@@ -1,3 +1,4 @@
+
 package com.CalistaAqilaRamadhani.backend.controller;
 
 import com.CalistaAqilaRamadhani.backend.model.Score;
@@ -8,8 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -20,11 +21,15 @@ public class ScoreController {
     @Autowired
     private ScoreService scoreService;
 
-    @GetMapping("/{scoreId}")
+    @GetMapping
     public ResponseEntity<List<Score>> getAllScores() {
         List<Score> scores = scoreService.getAllScores();
-        return
-            ResponseEntity.ok(scores);
+        return ResponseEntity.ok(scores);
+    }
+
+    @GetMapping("/{scoreId}")
+    public ResponseEntity<?> getScoreByID(
+        @PathVariable("scoreId") UUID scoreId) {
 
         Optional<Score> score = scoreService.getScoreByID(scoreId);
 
@@ -37,45 +42,47 @@ public class ScoreController {
     }
 
     @GetMapping("/leaderboard")
-    public  ResponseEntity<List<Score>>     getLeaderboardByPoint(
-        @RequestParam(defultValue = "10") Integer limit){
-        List<Score> scores = scoreService.getLeaderboard(limit);
+    public ResponseEntity<List<Score>> getLeaderboardByPoint(
+        @RequestParam(defaultValue = "10") Integer limit) {
 
-        return
-            ResponseEntity.ok(scores);
+        List<Score> scores = scoreService.getLeaderboard(limit);
+        return ResponseEntity.ok(scores);
     }
 
     @GetMapping("/above/{minValue}")
-
     public ResponseEntity<List<Score>> getScoresAboveValue(
-        @PathVariable Integer minValue){
-        List<Score> scores = scoreService.getScpreAboveValue(minValue);
-        return
-            ResponseEntity.ok(scores);
+        @PathVariable("minValue") Integer minValue) {
+
+        List<Score> scores =
+            scoreService.getScoresAboveValue(minValue);
+
+        return ResponseEntity.ok(scores);
     }
 
     @GetMapping("/recent")
+    public ResponseEntity<List<Score>> getRecentScores() {
 
-    public ResponseEntity<List<Score>> getRecentScores(){
         List<Score> scores = scoreService.getRecentScores();
-        return
-            ResponseEntity.ok(scores);
+        return ResponseEntity.ok(scores);
     }
 
     @DeleteMapping("/{scoreId}")
-    public  ResponseEntity<?> deleteScore(
-        @PAthVariable Long scoreID){
+    public ResponseEntity<?> deleteScore(
+        @PathVariable("scoreId") UUID scoreId) {
+
         try {
             scoreService.deleteScore(scoreId);
-            return
+            return ResponseEntity.noContent().build();
 
-                ResponseEntity.status(HttpsStatus.NOT_FOUND)
-                    .body("Eror : Score not found");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Error: Score not found");
         }
     }
 
     @PostMapping
-    public ResponseEntity<?> createScore(@RequestBody Score score) {
+    public ResponseEntity<?> createScore(
+        @RequestBody Score score) {
 
         try {
             Score newScore = scoreService.createScore(score);

@@ -8,6 +8,7 @@ import com.CalistaAqilaRamadhani.frontend.objects.BulletType;
 import com.CalistaAqilaRamadhani.frontend.objects.GameObject;
 import com.CalistaAqilaRamadhani.frontend.objects.Collidable;
 import com.CalistaAqilaRamadhani.frontend.objects.enemies.Enemy;
+import com.CalistaAqilaRamadhani.frontend.objects.patterns.bulletStrategy.BulletMovementPattern;
 
 public class Bullet extends GameObject {
 
@@ -18,6 +19,8 @@ public class Bullet extends GameObject {
     private float angle = 90f;
     private boolean isPlayerBullet;
     private boolean grazed;
+
+    private BulletMovementPattern movementPattern;
 
     public Bullet(float x, float y,
                   BulletType bulletType, int damage) {
@@ -31,6 +34,7 @@ public class Bullet extends GameObject {
         this.angle = 90f;
         this.isPlayerBullet = true;
         this.grazed = false;
+        this.movementPattern = null;
     }
 
     public Bullet(float x, float y, float speed,
@@ -45,6 +49,7 @@ public class Bullet extends GameObject {
         this.angle = speed < 0 ? 270f : 90f;
         this.isPlayerBullet = true;
         this.grazed = false;
+        this.movementPattern = null;
     }
 
     public void init(float x, float y, float vx, float vy,
@@ -67,13 +72,19 @@ public class Bullet extends GameObject {
         this.active = true;
         this.stateTime = 0f;
         this.grazed = false;
+        this.movementPattern = null;
     }
 
     @Override
     public void update(float delta) {
         super.update(delta);
-        x += vx * delta;
-        y += vy * delta;
+
+        if (movementPattern != null) {
+            movementPattern.move(this, delta);
+        } else {
+            x += vx * delta;
+            y += vy * delta;
+        }
     }
 
     @Override
@@ -135,6 +146,32 @@ public class Bullet extends GameObject {
 
     public void setAngle(float angle) {
         this.angle = angle;
+
+        float rad = (float) Math.toRadians(angle);
+
+        this.vx = (float) Math.cos(rad) * speed;
+        this.vy = (float) Math.sin(rad) * speed;
+    }
+
+    public void setSpeed(float speed) {
+        this.speed = speed;
+
+        float rad = (float) Math.toRadians(angle);
+
+        this.vx = (float) Math.cos(rad) * speed;
+        this.vy = (float) Math.sin(rad) * speed;
+    }
+
+    public float getStateTime() {
+        return stateTime;
+    }
+
+    public BulletMovementPattern getMovementPattern() {
+        return movementPattern;
+    }
+
+    public void setMovementPattern(BulletMovementPattern movementPattern) {
+        this.movementPattern = movementPattern;
     }
 
     public boolean hasBeenGrazed() {

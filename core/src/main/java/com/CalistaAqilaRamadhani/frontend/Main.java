@@ -7,19 +7,29 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 
+import com.CalistaAqilaRamadhani.frontend.commands.Command;
+import com.CalistaAqilaRamadhani.frontend.commands.InputHandler;
+import com.CalistaAqilaRamadhani.frontend.commands.ShootCommand;
+
 import com.CalistaAqilaRamadhani.frontend.objects.GameObject;
 import com.CalistaAqilaRamadhani.frontend.objects.Player;
-import com.CalistaAqilaRamadhani.frontend.objects.bullets.Bullet;
 import com.CalistaAqilaRamadhani.frontend.objects.enemies.Boss;
-import com.CalistaAqilaRamadhani.frontend.objects.enemies.Enemy;
 import com.CalistaAqilaRamadhani.frontend.objects.enemies.Fairy;
 import com.CalistaAqilaRamadhani.frontend.objects.items.Item;
 import com.CalistaAqilaRamadhani.frontend.objects.items.ItemType;
+
+import com.CalistaAqilaRamadhani.frontend.objects.patterns.entityStrategy.TargetPointMovement;
+import com.CalistaAqilaRamadhani.frontend.objects.patterns.entityStrategy.SCurveMovement;
+import com.CalistaAqilaRamadhani.frontend.objects.patterns.shootingStrategy.SpreadShot;
+import com.CalistaAqilaRamadhani.frontend.objects.patterns.shootingStrategy.AlternatingRingShot;
 
 import com.CalistaAqilaRamadhani.frontend.systems.AssetManager;
 import com.CalistaAqilaRamadhani.frontend.systems.EntityFactory;
 import com.CalistaAqilaRamadhani.frontend.systems.AudioSystem;
 import com.CalistaAqilaRamadhani.frontend.systems.BulletManager;
+import com.CalistaAqilaRamadhani.frontend.systems.CollisionReferee;
+
+import com.CalistaAqilaRamadhani.frontend.ui.GameHUD;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -28,20 +38,31 @@ import java.util.List;
 public class Main extends ApplicationAdapter {
 
     private SpriteBatch batch;
+
     private Player player;
     private ArrayList<Fairy> fairy;
     private Boss boss;
+
     private Item powerItem;
     private Item pointItem;
 
     private ArrayList<GameObject> entities;
-    private BulletManager bulletManager;
 
-    private float playerShootTimer = 0f;
-    private float bossShootTimer = 1.5f;
+    private BulletManager bulletManager;
+    private CollisionReferee collisionReferee;
+    private InputHandler inputHandler;
+    private GameHUD gameHUD;
+
+    private float waveTimer = 0f;
+    private int wave1SpawnIndex = 0;
+
+    private float enemyShootTimer = 0f;
+    private float phaseTimer = 0f;
+    private int currentPhase = 0;
 
     @Override
     public void create() {
+
         batch = new SpriteBatch();
 
         fairy = new ArrayList<>();
@@ -53,178 +74,150 @@ public class Main extends ApplicationAdapter {
         AudioSystem.getInstance().playBgm();
 
         bulletManager = new BulletManager();
+        collisionReferee = new CollisionReferee();
+        inputHandler = new InputHandler();
+        gameHUD = new GameHUD();
 
         player = EntityFactory.createPlayer(
-            280, 40,
+            200, 50,
             "Reimu Hakurei",
             100, 15, 3
         );
 
-        player.setSpeed(250f);
-
-        Fairy redFairy = EntityFactory.createFairy(
-            150, 380,
-            "Red Fairy", 20
-        );
-
-        Fairy blueFairy = EntityFactory.createFairy(
-            250, 380,
-            "Blue Fairy", 20,
-            "fairy_idle_blue"
-        );
-
-        fairy.add(redFairy);
-        fairy.add(blueFairy);
+        player.registerObserver(gameHUD);
 
         boss = EntityFactory.createBoss(
-            380, 400,
+            200, 420,
             "Rumia", 150
         );
 
         powerItem = EntityFactory.createItem(
-            200, 450,
+            180, 450,
             ItemType.POWER
         );
 
         pointItem = EntityFactory.createItem(
-            320, 480,
+            220, 480,
             ItemType.POINT
         );
 
         entities.add(player);
-        entities.addAll(fairy);
         entities.add(boss);
         entities.add(powerItem);
         entities.add(pointItem);
+
+        bulletManager.setEntities(entities);
+
+        boss.setMovementPattern(
+            new TargetPointMovement(
+                200f, 420f, 150f
+            )
+        );
+
+        boss.setShootingPattern(
+            new SpreadShot(
+                220f,
+                5,
+                25f,
+                10,
+                player,
+                "bullet_danmaku_red"
+            )
+        );
+
+        inputHandler.setEntities(entities);
+
+        resetFairyWave();
+
+        currentPhase = 0;
+        phaseTimer = 0f;
+        enemyShootTimer = 0f;
     }
 
     @Override
     public void render() {
+
         float delta = Gdx.graphics.getDeltaTime();
 
-        playerShootTimer -= delta;
-        bossShootTimer -= delta;
+        if (Gdx.input != null
+            && Gdx.input.isKeyJustPressed(Input.Keys.R)
+            && player.isGameOver()) {
 
-        if (!player.isDestroyed() && player.isAlive()) {
-
-            boolean shooting =
-                Gdx.input.isKeyPressed(Input.Keys.SPACE)
-                    || Gdx.input.isKeyPressed(Input.Keys.Z);
-
-            if (shooting && playerShootTimer <= 0f) {
-
-                player.shootBullet(bulletManager);
-
-                AudioSystem.getInstance().playShoot();
-
-                playerShootTimer = 0.15f;
-            }
+            restartGame();
         }
 
-        if (!boss.isDestroyed() && bossShootTimer <= 0f) {
+        if (!player.isGameOver()
+            && !player.isDestroyed()) {
 
-            boss.shootBullet(bulletManager);
+            List<Command> commands =
+                inputHandler.handleInput(delta);
 
-            bossShootTimer = 1.5f;
-        }
+            for (Command command : commands) {
 
-        for (GameObject entity : entities) {
-            if (!entity.isDestroyed()) {
-                entity.update(delta);
-            }
-        }
+                if (command instanceof ShootCommand) {
 
-        bulletManager.updateAndRecycle(
-            delta,
-            Gdx.graphics.getWidth(),
-            Gdx.graphics.getHeight()
-        );
+                    int bulletsBefore =
+                        bulletManager
+                            .getActivePlayerBullets()
+                            .size();
 
-        for (Bullet bullet : bulletManager.getActivePlayerBullets()) {
+                    command.execute(
+                        player,
+                        bulletManager
+                    );
 
-            if (bullet.isDestroyed()) {
-                continue;
-            }
+                    int bulletsAfter =
+                        bulletManager
+                            .getActivePlayerBullets()
+                            .size();
 
-            for (GameObject entity : entities) {
-
-                if (entity instanceof Enemy enemy
-                    && !enemy.isDestroyed()) {
-
-                    if (bullet.getCoreHitbox()
-                        .overlaps(enemy.getCoreHitbox())) {
-
-                        bullet.onCollision(enemy);
-
-                        if (enemy.isDestroyed()) {
-                            AudioSystem.getInstance()
-                                .playEnemyDeath();
-                        }
-
-                        if (bullet.isDestroyed()) {
-                            break;
-                        }
+                    if (bulletsAfter > bulletsBefore) {
+                        AudioSystem.getInstance()
+                            .playShoot();
                     }
-                }
-            }
-        }
 
-        if (player.isAlive() && !player.isDestroyed()) {
+                } else {
 
-            for (Bullet bullet : bulletManager.getActiveEnemyBullets()) {
-
-                if (bullet.isDestroyed()) {
-                    continue;
-                }
-
-                if (bullet.getCoreHitbox()
-                    .overlaps(player.getCoreHitbox())) {
-
-                    player.takeDamage(10);
-                    bullet.destroy();
-
-                } else if (
-                    bullet.getCoreHitbox()
-                        .overlaps(player.getGrazeHitbox())
-                        && !bullet.hasBeenGrazed()) {
-
-                    player.addScore(50);
-                    bullet.setGrazed(true);
-
-                    System.out.println(
-                        "GRAZE! +50 Points. Score: "
-                            + player.getScore()
+                    command.execute(
+                        player,
+                        bulletManager
                     );
                 }
             }
         }
 
-        if (!player.isDestroyed()) {
+        updateEnemyScheduler(delta);
 
-            for (GameObject entity : entities) {
+        updateAndClean(
+            entities,
+            delta,
+            416,
+            560
+        );
 
-                if (entity instanceof Item item
-                    && !item.isDestroyed()) {
+        bulletManager.update(
+            delta,
+            416,
+            560
+        );
 
-                    if (player.getCoreHitbox()
-                        .overlaps(item.getCoreHitbox())) {
+        collisionReferee.resolveCollisions(
+            player,
+            entities,
+            bulletManager
+        );
 
-                        player.onCollision(item);
-
-                        if (item.isDestroyed()) {
-                            AudioSystem.getInstance()
-                                .playItemCollect();
-                        }
-                    }
-                }
-            }
-        }
-
-        ScreenUtils.clear(0.1f, 0.1f, 0.15f, 1f);
+        ScreenUtils.clear(
+            0.1f,
+            0.1f,
+            0.15f,
+            1f
+        );
 
         batch.begin();
 
         for (GameObject entity : entities) {
+
             if (!entity.isDestroyed()) {
                 entity.render(batch);
             }
@@ -232,7 +225,235 @@ public class Main extends ApplicationAdapter {
 
         bulletManager.render(batch);
 
+        gameHUD.render(batch);
+
         batch.end();
+
+        gameHUD.renderBackground();
+
+        player.renderFocusIndicator(
+            gameHUD.getShapeRenderer()
+        );
+    }
+
+    private void updateFairyWave(float delta) {
+
+        float[] spawnX = {
+            60f,
+            68f,
+            76f,
+            84f,
+            92f
+        };
+
+        waveTimer += delta;
+
+        if (wave1SpawnIndex < spawnX.length
+            && waveTimer >=
+            1.0f + wave1SpawnIndex * 0.267f) {
+
+            float x = spawnX[wave1SpawnIndex++];
+
+            Fairy f = EntityFactory.createFairy(
+                x,
+                480f,
+                "Left S-Curve Fairy",
+                8,
+                "fairy_idle_blue"
+            );
+
+            f.setMovementPattern(
+                new SCurveMovement(
+                    130f,
+                    (float) Math.toRadians(270),
+                    false
+                )
+            );
+
+            f.setShootingPattern(null);
+
+            fairy.add(f);
+            entities.add(f);
+
+            System.out.println(
+                "[Fairy Wave] Spawned S-Curve Fairy at x = "
+                    + x
+            );
+        }
+    }
+
+    private void resetFairyWave() {
+
+        waveTimer = 0f;
+        wave1SpawnIndex = 0;
+    }
+
+    private void updateEnemyScheduler(float delta) {
+
+        updateFairyWave(delta);
+
+        fairy.removeIf(
+            f -> f.isDestroyed()
+                || f.isOffScreen(416, 560)
+        );
+
+        enemyShootTimer += delta;
+
+        if (enemyShootTimer >= 1.5f
+            && boss != null
+            && !boss.isDestroyed()) {
+
+            boss.shootBullet(bulletManager);
+
+            enemyShootTimer = 0f;
+        }
+
+        phaseTimer += delta;
+
+        if (phaseTimer >= 4.0f
+            && boss != null
+            && !boss.isDestroyed()) {
+
+            phaseTimer = 0f;
+
+            currentPhase =
+                (currentPhase + 1) % 2;
+
+            if (currentPhase == 0) {
+
+                boss.setMovementPattern(
+                    new TargetPointMovement(
+                        120f,
+                        420f,
+                        150f
+                    )
+                );
+
+                boss.setShootingPattern(
+                    new SpreadShot(
+                        220f,
+                        5,
+                        25f,
+                        10,
+                        player,
+                        "bullet_danmaku_red"
+                    )
+                );
+
+                System.out.println(
+                    "[Boss Strategy] Rumia shifted to "
+                        + "Upper Left with Aimed SpreadShot!"
+                );
+
+            } else {
+
+                boss.setMovementPattern(
+                    new TargetPointMovement(
+                        280f,
+                        420f,
+                        150f
+                    )
+                );
+
+                boss.setShootingPattern(
+                    new AlternatingRingShot(
+                        180f,
+                        16,
+                        10
+                    )
+                );
+
+                System.out.println(
+                    "[Boss Strategy] Rumia shifted to "
+                        + "Upper Right with AlternatingRingShot!"
+                );
+            }
+        }
+    }
+
+    private void restartGame() {
+
+        System.out.println(
+            "[Main] Restarting game..."
+        );
+
+        bulletManager.clearEnemyBullets();
+        bulletManager.clearPlayerBullets();
+
+        player.removeObserver(gameHUD);
+
+        entities.clear();
+        fairy.clear();
+
+        player = EntityFactory.createPlayer(
+            200,
+            50,
+            "Reimu Hakurei",
+            100,
+            15,
+            3
+        );
+
+        player.resetGame();
+        player.registerObserver(gameHUD);
+
+        entities.add(player);
+
+        boss = EntityFactory.createBoss(
+            200,
+            420,
+            "Rumia",
+            150
+        );
+
+        boss.setMovementPattern(
+            new TargetPointMovement(
+                200f,
+                420f,
+                150f
+            )
+        );
+
+        boss.setShootingPattern(
+            new SpreadShot(
+                220f,
+                5,
+                25f,
+                10,
+                player,
+                "bullet_danmaku_red"
+            )
+        );
+
+        powerItem = EntityFactory.createItem(
+            180,
+            450,
+            ItemType.POWER
+        );
+
+        pointItem = EntityFactory.createItem(
+            220,
+            480,
+            ItemType.POINT
+        );
+
+        entities.add(boss);
+        entities.add(powerItem);
+        entities.add(pointItem);
+
+        bulletManager.setEntities(entities);
+
+        inputHandler.setEntities(entities);
+
+        resetFairyWave();
+
+        currentPhase = 0;
+        phaseTimer = 0f;
+        enemyShootTimer = 0f;
+
+        System.out.println(
+            "[Main] Game restarted successfully!"
+        );
     }
 
     public <T extends GameObject> void updateAndClean(
@@ -247,14 +468,19 @@ public class Main extends ApplicationAdapter {
 
             T entity = iterator.next();
 
-            entity.update(delta);
+            if (!entity.isDestroyed()) {
+                entity.update(delta);
+            }
 
-            if (entity.isOffScreen(screenWidth, screenHeight)
-                || entity.isDestroyed()) {
+            if (entity.isOffScreen(
+                screenWidth,
+                screenHeight
+            ) || entity.isDestroyed()) {
 
                 System.out.println(
                     "Removed via Generic Iterator: "
-                        + entity.getClass().getSimpleName()
+                        + entity.getClass()
+                        .getSimpleName()
                 );
 
                 iterator.remove();
@@ -271,6 +497,10 @@ public class Main extends ApplicationAdapter {
 
         if (bulletManager != null) {
             bulletManager.dispose();
+        }
+
+        if (gameHUD != null) {
+            gameHUD.dispose();
         }
 
         AudioSystem.getInstance().dispose();

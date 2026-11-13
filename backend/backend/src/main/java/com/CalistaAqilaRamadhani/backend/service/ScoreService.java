@@ -1,3 +1,4 @@
+
 package com.CalistaAqilaRamadhani.backend.service;
 
 import com.CalistaAqilaRamadhani.backend.model.Score;
@@ -6,6 +7,7 @@ import com.CalistaAqilaRamadhani.backend.repository.ScoreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,34 +24,31 @@ public class ScoreService {
     public Optional<Score> getScoreByID(UUID scoreId) {
         return scoreRepository.findById(scoreId);
     }
-}
 
-@Service
-public List<Score> getAllScores(){
+    public List<Score> getAllScores() {
+        return scoreRepository.findAll();
+    }
 
-    @Autowired
-    return
-        scoreRespiratory.save(score);
-
-    public List<Score> getRecentScores(){
+    public List<Score> getRecentScores() {
         return scoreRepository.findAllByOrderByCreatedAtDesc();
     }
 
-    public List<Score> getScoreAboveValue (Integer minValue){
+    public List<Score> getScoresAboveValue(Integer minValue) {
         return scoreRepository.findByPointGreaterThan(minValue);
     }
 
-    public List<Score> getLeaderboard (Integer limit){
-        return scoreRepository.findTopScores (limit);
+    public List<Score> getLeaderboard(Integer limit) {
+        return scoreRepository.findTopScores(limit);
     }
 
     public void deleteScore(UUID scoreId) {
         Score score = scoreRepository.findById(scoreId)
-            .orElseThrow (() ->
+            .orElseThrow(() ->
                 new RuntimeException(
-                    "Score with ID" +  scoreId + "was not found"
+                    "Score with ID " + scoreId + " was not found"
                 )
-                );
+            );
+
         scoreRepository.delete(score);
     }
 }
